@@ -1,0 +1,49 @@
+# Action Tab 에 보여지는 이름
+name : was-cd
+run-name : ${{github.actor}} is learning Github Actions
+on:
+  push:
+    branches: main
+
+jobs:
+  was-build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set-repository
+      - uses: actions/checkout@v3
+
+      #https://github.com/aws-actions/configure-aws-credentials
+      - name: set-aws-credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      #https://github.com/aws-actions/amazon-ecr-login
+      - name: login-aws-ecr
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: set-java-version
+        uses: actions/setup-java@v3
+        with:
+          java-version: "11"
+          distribution: "temurin"
+          cache: "gradle"
+
+      - name: use-gradle-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: gradle-build
+        run: ./gradlew build --no-daemon
+
+      - name: jib
+        run: ./gradlew jib
