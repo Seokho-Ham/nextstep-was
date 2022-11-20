@@ -51,12 +51,20 @@ jobs:
       - name: Download Task Definition Template
         run: |
           aws ecs describe-task-definition \
-          --task-definition $ \
+          --task-definition was-task \
           --query taskDefinition \
           > task-definition.json
 
-      - name: create-new-task-definition
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: was-container
+          image: latest
+
+      - name: create-new-task-definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: task-definition.json
           service: was-service
